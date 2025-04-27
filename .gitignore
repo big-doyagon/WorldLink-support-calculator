@@ -1,0 +1,38 @@
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# CSVファイル（入出力例としてのみ使用）
+*.csv
+
+# 仮想環境
+venv/
+ENV/
+
+# IDEの設定ファイル
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OSが生成するファイル
+.DS_Store
+Thumbs.db
