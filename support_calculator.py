@@ -147,12 +147,21 @@ def solve_optimization(candidates_df, shards_limit, score_limit):
     for card_id, group in candidates_df.groupby("cid"):
         prob += pl.lpSum(x[i] for i in group.index) <= 1
     
-    # 制約条件3: カケラ使用量の上限
-    prob += pl.lpSum(candidates_df.cost_mr[i] * x[i] for i in candidates_df.index) <= shards_limit
+    # 制約 3: MR はカケラ枠だけで賄う
+    prob += (
+        pl.lpSum(candidates_df.cost_mr[i] * x[i] for i in candidates_df.index)
+        <= shards_limit
+    )
     
-    # 制約条件4: スキルスコア使用量の上限
-    prob += pl.lpSum(candidates_df.cost_skl[i] * x[i] for i in candidates_df.index) <= score_limit
-    
+    # 制約 4: MR + SKL は 2 資源の合計内
+    prob += (
+        pl.lpSum(
+            (candidates_df.cost_mr[i] + candidates_df.cost_skl[i]) * x[i]
+            for i in candidates_df.index
+        )
+        <= shards_limit + score_limit
+    )
+
     # 最適化問題を解く
     prob.solve(pl.PULP_CBC_CMD(msg=False))
     
@@ -179,18 +188,19 @@ def save_and_print_results(prob, selected_candidates, shards_limit, score_limit)
     # 結果をCSVファイルに保存
     selected_candidates.to_csv("best_plan.csv", index=False, encoding="utf-8-sig")
     
-    # カケラ使用量の計算（スキルスコア使用後の残りをカケラで支払う）
-    total_skill_cost = selected_candidates.cost_skl.sum()
-    skill_cost_paid = min(total_skill_cost, score_limit)
-    remaining_skill_cost = max(0, total_skill_cost - score_limit)
-    
-    # 合計カケラ使用量
-    total_shards_used = selected_candidates.cost_mr.sum() + remaining_skill_cost
-    
-    # 結果を出力
+    # --- 使用量計算 ---
+    total_mr   = selected_candidates.cost_mr.sum()
+    total_skl  = selected_candidates.cost_skl.sum()
+
+    # スキルスコアを優先的に充当し、足りない分だけカケラ補填
+    skill_paid   = min(total_skl, score_limit)
+    shard_on_skl = max(0, total_skl - score_limit)
+
+    total_shards_used = total_mr + shard_on_skl
+
     print(f"★ 最終倍率 : {prob.objective.value():.2f} %")
-    print(f"★ カケラ    : {total_shards_used:.0f} / {shards_limit}")
-    print(f"★ スコア    : {skill_cost_paid:.0f} / {score_limit}")
+    print(f"★ カケラ    : {total_shards_used} / {shards_limit}")
+    print(f"★ スコア    : {skill_paid} / {score_limit}")
 
 
 def main():
