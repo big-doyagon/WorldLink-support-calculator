@@ -139,7 +139,7 @@ if st.button("入力データを CSV で保存"):
     st.download_button("アイテム一覧をダウンロード", df_items.to_csv(index=False).encode("utf-8-sig"), "item_list.csv", "text/csv")
 
 # 最適化実行
-if st.button("🔍 最適化を実行", type="primary"):
+if st.button("最適化を実行", type="primary"):
     try:
         with st.spinner("最適化計算中..."):
             cards_df = pd.DataFrame(cards_input)
@@ -165,3 +165,4 @@ if st.button("🔍 最適化を実行", type="primary"):
 
 st.markdown("---")
 st.caption("© 2025 WorldLink Support Optimizer")
+st.caption("このアプリにより生じた損害は、開発者は一切責任を負いません。")
