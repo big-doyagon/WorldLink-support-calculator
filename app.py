@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-WorldLink サポートユニット最適化計算ツール  - Streamlit 版
+WLサポートユニット最適化計算ツール  - Streamlit 版
 （2025-04-29 仕様書改訂対応）
 
 変更点
@@ -21,7 +21,7 @@ import support_calculator as sc
 # ページ設定
 # --------------------------------------------------
 st.set_page_config(
-    page_title="ワールドリンク サポートユニット最適化",
+    page_title="WLサポートユニット最適化",
     page_icon="🎮",
     layout="wide",
 )
@@ -36,11 +36,10 @@ MAX_CARDS = 100
 # --------------------------------------------------
 # サイドバー – CSV アップロード（任意）
 # --------------------------------------------------
-st.sidebar.header("CSV ファイル読み込み（任意）")
-card_file = st.sidebar.file_uploader("カード一覧 CSV (name,rare,mas,skill,wl)", type="csv")
-item_file = st.sidebar.file_uploader("アイテム一覧 CSV (item,amount)", type="csv")
+st.sidebar.header("File Upload")
+card_file = st.sidebar.file_uploader("カード一覧のCSVがある場合はここから読み込ませてください。", type="csv")
 
-if st.sidebar.button("CSV をフォームに反映", type="primary"):
+if st.sidebar.button("ファイル読み込み", type="primary"):
     try:
         # カード CSV があれば反映
         if card_file:
@@ -65,22 +64,14 @@ if st.sidebar.button("CSV をフォームに反映", type="primary"):
                     st.session_state.setdefault(f"mas_{i}", 0)
                     st.session_state.setdefault(f"skill_{i}", 1)
                     st.session_state.setdefault(f"wl_{i}", False)
-        # アイテム CSV があれば反映
-        if item_file:
-            items_df_uploaded = pd.read_csv(item_file)
-            item_map = dict(zip(items_df_uploaded["item"], items_df_uploaded["amount"]))
-            st.session_state["shard"] = int(item_map.get("想いのカケラ", 0))
-            st.session_state["crystal"] = int(item_map.get("想いの純結晶", 0))
-            st.session_state["med_skill"] = int(item_map.get("スキルスコア中級", 0))
-            st.session_state["lge_skill"] = int(item_map.get("スキルスコア上級", 0))
         st.sidebar.success("CSV をフォームに反映しました！")
     except Exception as e:
-        st.sidebar.error(f"CSV の反映でエラー: {e}")
+        st.sidebar.error(f"CSV の反映でエラーが発生しました: {e}")
 
 # --------------------------------------------------
 # メインエリア – 入力フォーム
 # --------------------------------------------------
-st.title("ワールドリンク サポートユニット最適化計算ツール")
+st.title("WLサポートユニット最適化計算ツール")
 st.caption("所持カードとアイテム数から、最も効率的な強化プランを算出します。")
 
 # アイテム数入力
@@ -96,7 +87,7 @@ with col4:
     lge_skill = st.number_input("スキルスコア上級", min_value=0, key="lge_skill")
 
 # カード入力フォーム
-st.subheader("カード入力フォーム")
+st.subheader("所持カード入力")
 if "card_count" not in st.session_state:
     st.session_state.card_count = MIN_CARDS
 count = st.number_input(
@@ -127,16 +118,8 @@ for i in range(count):
         })
 
 # データ保存ボタン
-if st.button("入力データを CSV で保存"):
-    df_cards = pd.DataFrame(cards_input)
-    st.download_button("カード一覧をダウンロード", df_cards.to_csv(index=False).encode("utf-8-sig"), "card_list.csv", "text/csv")
-    df_items = pd.DataFrame([
-        {"item":"想いのカケラ","amount":shard},
-        {"item":"想いの純結晶","amount":crystal},
-        {"item":"スキルスコア中級","amount":med_skill},
-        {"item":"スキルスコア上級","amount":lge_skill},
-    ])
-    st.download_button("アイテム一覧をダウンロード", df_items.to_csv(index=False).encode("utf-8-sig"), "item_list.csv", "text/csv")
+df_cards = pd.DataFrame(cards_input)
+st.download_button("カード一覧をダウンロード", df_cards.to_csv(index=False).encode("utf-8-sig"), "card_list.csv", "text/csv")
 
 # 最適化実行
 if st.button("最適化を実行", type="primary"):
@@ -152,14 +135,43 @@ if st.button("最適化を実行", type="primary"):
             shard_on_skl = max(0, total_skl - score_limit)
             total_shards = total_mr + shard_on_skl
         st.success("最適化が完了しました！")
-        st.metric("最終倍率", f"{prob.objective.value():.2f}%")
+        st.subheader("最適化結果")
         m1, m2, m3 = st.columns(3)
-        m1.metric("カケラ使用量", f"{total_shards} / {shards_limit}")
-        m2.metric("スキルスコア使用量", f"{skill_paid} / {score_limit}")
-        m3.metric("選択カード数", len(selected))
-        st.subheader("サポートユニット詳細")
-        st.dataframe(selected, use_container_width=True)
-        st.download_button("結果を CSV でダウンロード", selected.to_csv(index=False).encode("utf-8-sig"), "best_plan.csv", "text/csv")
+        m1.metric("最終倍率", f"{prob.objective.value():.2f}%")
+        m2.metric("カケラ使用量", f"{total_shards} / {shards_limit}")
+        m3.metric("スキルスコア使用量（カケラ換算）", f"{skill_paid} / {score_limit}")
+        st.subheader("強化後のサポートユニット")
+        st.caption("文字数の都合上、以下の表ではマスターランクをMR、スキルレベルをSLと表記します。")
+        st.caption("マスラン強化コストとスキル強化コストはカケラ換算のコストを示します（スキスコ中級: 50、上級: 250）。")
+        st.caption("強化の際はスキルスコアを優先して使用してください。")
+        
+        # カラム名を日本語に変更
+        column_names = {
+            "cid": "カードID",
+            "name": "カード名",
+            "wl": "WL限定",
+            "mas_tgt": "強化後MR",
+            "skl_tgt": "強化後SL",
+            "value": "倍率値",
+            "cost_mr": "必要カケラ_MR",
+            "cost_skl": "必要カケラ_SL"
+        }
+        
+        # カラム名を変更したデータフレームを作成
+        renamed_df = selected.rename(columns=column_names)
+        
+        # カラムの表示順序を指定
+        display_order = [
+            "カード名", "WL限定", "強化後MR", "強化後SL",
+            "必要カケラ_MR", "必要カケラ_SL", "倍率値"
+        ]
+        
+        # カラムが存在する場合のみ表示順序に含める
+        columns_to_display = [col for col in display_order if col in renamed_df.columns]
+        
+        # サポートユニット詳細を表示
+        st.dataframe(renamed_df[columns_to_display], use_container_width=True)
+        st.download_button("結果を CSV でダウンロード", renamed_df.to_csv(index=False).encode("utf-8-sig"), "best_plan.csv", "text/csv")
     except Exception as e:
         st.error(f"最適化中にエラーが発生しました: {e}")
 
