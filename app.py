@@ -2,14 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 WLサポートユニット最適化計算ツール  - Streamlit 版
-（2025-04-29 仕様書改訂対応）
-
-変更点
--------
-* CSV アップロードは **サイドバー** に移動し、アップロードは任意
-* CSV のフォーム反映はボタン操作で実行
-* アップロードがない場合や片方のみでも動作
-* メインエリアは 1 ページ構成でフォームと結果表示
 """
 
 from __future__ import annotations
@@ -94,7 +86,7 @@ count = st.number_input(
     "入力欄の枚数", min_value=MIN_CARDS, max_value=MAX_CARDS, key="card_count",
     help="最低 20 枚、最大 100 枚まで指定できます。"
 )
-# st.info(f"現在の入力欄数: {count} 枚")
+
 cards_input: list[dict] = []
 for i in range(count):
     with st.expander(f"カード {i+1}", expanded=True):
