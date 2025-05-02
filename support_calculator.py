@@ -11,6 +11,12 @@ import pandas as pd
 import pulp as pl
 
 # ---------------- 定数設定 ----------------
+# 今回のサポートユニットの枚数
+SUPPORT_UNITS = 20
+
+# 今回のサポートユニット理論値
+THEORETICAL_MAX = 370
+
 # 基本ボーナス値（カードレア度別）
 BASE_BONUS = {"4": 12.5, "BD": 10.0}
 
@@ -141,7 +147,7 @@ def solve_optimization(candidates_df, shards_limit, score_limit):
     prob += pl.lpSum(candidates_df.value[i] * x[i] for i in candidates_df.index)
     
     # 制約条件1: 選択するカードはサポートユニット最大枚数の20枚
-    prob += pl.lpSum(x[i] for i in candidates_df.index) == 20
+    prob += pl.lpSum(x[i] for i in candidates_df.index) == SUPPORT_UNITS
     
     # 制約条件2: 各カードは最大１つの強化案しか選択できない
     for card_id, group in candidates_df.groupby("cid"):
