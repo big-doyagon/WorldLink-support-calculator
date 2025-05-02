@@ -22,8 +22,9 @@ st.set_page_config(
 # 定数
 # --------------------------------------------------
 RARITY_LABEL2CODE = {"☆4": "4", "BD/AN": "BD"}
-MIN_CARDS = 20
-MAX_CARDS = 100
+MIN_CARDS = sc.SUPPORT_UNITS
+MAX_CARDS = sc.SUPPORT_UNITS * 2
+THEORETICAL_MAX = sc.THEORETICAL_MAX
 
 # --------------------------------------------------
 # サイドバー – CSV アップロード（任意）
@@ -31,7 +32,7 @@ MAX_CARDS = 100
 st.sidebar.header("File Upload")
 card_file = st.sidebar.file_uploader("カード一覧のCSVがある場合はここから読み込ませてください。", type="csv")
 
-if st.sidebar.button("ファイル読み込み", type="primary"):
+if st.sidebar.button("ファイル情報を反映", type="primary"):
     try:
         # カード CSV があれば反映
         if card_file:
@@ -111,7 +112,7 @@ for i in range(count):
 
 # データ保存ボタン
 df_cards = pd.DataFrame(cards_input)
-st.download_button("カード一覧をダウンロード", df_cards.to_csv(index=False).encode("utf-8-sig"), "card_list.csv", "text/csv")
+st.download_button("カード一覧をCSVでダウンロード", df_cards.to_csv(index=False).encode("utf-8-sig"), "card_list.csv", "text/csv")
 
 # 最適化実行
 if st.button("最適化を実行", type="primary"):
@@ -129,7 +130,7 @@ if st.button("最適化を実行", type="primary"):
         st.success("最適化が完了しました！")
         st.subheader("最適化結果")
         m1, m2, m3 = st.columns(3)
-        m1.metric("最終倍率", f"{prob.objective.value():.2f}%")
+        m1.metric("最終倍率", f"{prob.objective.value():.2f}% / {THEORETICAL_MAX}%")
         m2.metric("カケラ使用量", f"{total_shards} / {shards_limit}")
         m3.metric("スキルスコア使用量（カケラ換算）", f"{skill_paid} / {score_limit}")
         st.subheader("強化後のサポートユニット")
