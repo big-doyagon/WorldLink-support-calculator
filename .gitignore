@@ -42,7 +42,9 @@ Thumbs.db
 *.log
 *.sqlite3
 
+# CSV files
+*.csv
+
 # Others
 coverage/
 htmlcov/
-*.csv
